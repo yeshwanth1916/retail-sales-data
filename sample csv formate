@@ -1,0 +1,5 @@
+Order ID,Order Date,Store ID,Product ID,Product Category,Quantity Sold,Unit Price
+101,2024-01-01,S1,P1,Electronics,2,500
+102,2024-01-02,S2,P2,Clothing,3,100
+103,invalid,S1,P3,Electronics,-1,200
+104,2024-01-04,S3,P4,Furniture,1,
