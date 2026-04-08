@@ -1,21 +1,22 @@
-from sqlalchemy import create_engine, Column, String, Integer, Float, Date
+from sqlalchemy import create_engine, Column, String, Integer, Float, Date, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DB_NAME = "sqlite:///retail.db"
+# DATABASE
+DATABASE_URL = "sqlite:///retail.db"
 
-engine = create_engine(DB_NAME, echo=False)
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(bind=engine)
+
 Base = declarative_base()
-Session = sessionmaker(bind=engine)
 
-
-def get_connection():
-    return engine.connect()
-
+# -----------------------------
+# TABLES
+# -----------------------------
 
 class RawSales(Base):
     __tablename__ = "raw_sales"
-    
+
     order_id = Column(String, primary_key=True)
     order_date = Column(String)
     store_id = Column(String)
@@ -24,14 +25,11 @@ class RawSales(Base):
     quantity = Column(Integer)
     unit_price = Column(Float)
     file_name = Column(String)
-    
-    class Config:
-        from_attributes = True
 
 
 class CleanSales(Base):
     __tablename__ = "clean_sales"
-    
+
     order_id = Column(String, primary_key=True)
     order_date = Column(Date)
     store_id = Column(String)
@@ -43,23 +41,29 @@ class CleanSales(Base):
     order_month = Column(String)
     order_day = Column(String)
     file_name = Column(String)
-    
-    class Config:
-        from_attributes = True
 
 
 class AggSales(Base):
     __tablename__ = "agg_sales"
-    
-    store_id = Column(String, primary_key=True)
-    category = Column(String, primary_key=True)
-    order_month = Column(String, primary_key=True)
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    store_id = Column(String)
+    category = Column(String)
+    order_month = Column(String)
     total_sales = Column(Float)
 
 
-def get_session():
-    return Session()
-
-
+# -----------------------------
+# CREATE TABLES + VIEW
+# -----------------------------
 def create_tables():
-    Base.metadata.create_all(engine)
+    Base.metadata.create_all(bind=engine)
+
+    # CREATE VIEW
+    with engine.connect() as conn:
+        conn.execute(text("""
+        CREATE VIEW IF NOT EXISTS sales_summary_view AS
+        SELECT order_month, SUM(total_amount) as total_sales
+        FROM clean_sales
+        GROUP BY order_month
+        """))
